@@ -405,7 +405,7 @@ namespace Microsoft.Maui.Platform
 				// but it won't restore the focus to Control
 				ContainingPage.IsTabStop = wasTabStop;
 			}
-    }
+		}
     
 		internal static IWindow? GetHostedWindow(this IView? view)
 			=> GetHostedWindow(view?.Handler?.PlatformView as FrameworkElement);
@@ -427,8 +427,16 @@ namespace Microsoft.Maui.Platform
 						return window;
 				}
 			}
-
+			
 			return null;
+		}
+		
+		public static void UpdateInputTransparent(this FrameworkElement nativeView, IView view)
+		{
+			if (nativeView is UIElement element)
+			{ 
+				element.IsHitTestVisible = !view.InputTransparent;
+			}
 		}
 	}
 }

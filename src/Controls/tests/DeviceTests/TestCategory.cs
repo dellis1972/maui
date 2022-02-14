@@ -8,6 +8,7 @@
 		public const string FlyoutPage = "FlyoutPage";
 		public const string Gesture = "Gesture";
 		public const string Label = "Label";
+		public const string Layout = "Layout";
 		public const string NavigationPage = "NavigationPage";
 		public const string Shell = "Shell";
 		public const string TabbedPage = "TabbedPage";
