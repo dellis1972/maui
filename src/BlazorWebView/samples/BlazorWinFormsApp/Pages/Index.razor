@@ -13,6 +13,32 @@
 <SharedComponent />
 
 @code {
+    protected override void OnInitialized()
+    {
+        Task.Run(async () =>
+        {
+            while (true)
+            {
+                await Task.Delay(1000);
+
+                var awaited = false;
+
+                await InvokeAsync(async () =>
+                {
+                    await Task.Delay(1000);
+                    awaited = true;
+                    AppState.Counter++;
+                    StateHasChanged();
+                });
+
+                if (!awaited)
+                {
+                    throw new Exception("Didn't await");
+                }
+            }
+        });
+    }
+
     void IncrementCount()
     {
         AppState.Counter++;

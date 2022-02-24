@@ -72,8 +72,23 @@ namespace Microsoft.AspNetCore.Components.WebView.WindowsForms
 				}
 				else
 				{
-					var asyncResult = _dispatchThreadControl.BeginInvoke(workItem);
-					await Task.Factory.FromAsync(asyncResult, _dispatchThreadControl.EndInvoke);
+					var tcs = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+					// BeginInvoke specifically expects an `Action` so avoid using var here.
+					Action action = async () =>
+					{
+						try
+						{
+							await workItem();
+							tcs.TrySetResult();
+						}
+						catch (Exception ex)
+						{
+							tcs.TrySetException(ex);
+						}
+					};
+
+					var asyncResult = _dispatchThreadControl.BeginInvoke(action, workItem, tcs);
+					await Task.WhenAll(tcs.Task, Task.Factory.FromAsync(asyncResult, _dispatchThreadControl.EndInvoke));
 				}
 			}
 			catch (Exception ex)
