@@ -19,6 +19,10 @@
 
     <UsingTask
         AssemblyFile="$(_ResizetizerTaskAssemblyName)"
+        TaskName="Microsoft.Maui.Resizetizer.CalculateResizetizeOutputs" />
+
+    <UsingTask
+        AssemblyFile="$(_ResizetizerTaskAssemblyName)"
         TaskName="Microsoft.Maui.Resizetizer.DetectInvalidResourceOutputFilenamesTask" />
 
     <UsingTask
@@ -115,6 +119,7 @@
             $(ResizetizeDependsOnTargets);
             ResizetizeCollectItems;
             ProcessMauiSplashScreens;
+            _CalculateResizetizeImagesOutputs;
         </ResizetizeDependsOnTargets>
         <ProcessMauiFontsDependsOnTargets>
             $(ProcessMauiFontsDependsOnTargets);
@@ -601,10 +606,21 @@
         </ItemGroup>
     </Target>
 
+    <Target Name="_CalculateResizetizeImagesOutputs"
+            Condition="'$(EnableMauiImageProcessing)' == 'true'">
+        <CalculateResizetizeOutputs
+            PlatformType="$(ResizetizerPlatformType)"
+            IntermediateOutputPath="$(_MauiIntermediateImages)"
+            InputsFile="$(_ResizetizerInputsFile)"
+            Images="@(_MauiImageToProcess)">
+              <Output TaskParameter="OutputFiles" ItemName="_ResizetizerOutputs" />
+        </CalculateResizetizeOutputs>
+    </Target>
+
     <Target Name="ResizetizeImages"
         Condition="'$(EnableMauiImageProcessing)' == 'true'"
         Inputs="$(MSBuildThisFileFullPath);$(_ResizetizerTaskAssemblyName);$(_ResizetizerInputsFile);@(MauiImage)"
-        Outputs="$(_ResizetizerStampFile)"
+        Outputs="$(_ResizetizerStampFile);@(_ResizetizerOutputs)"
         AfterTargets="$(ResizetizeAfterTargets)"
         BeforeTargets="$(ResizetizeBeforeTargets)"
         DependsOnTargets="$(ResizetizeDependsOnTargets)">

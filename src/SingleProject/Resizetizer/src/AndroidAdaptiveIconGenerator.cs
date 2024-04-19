@@ -7,12 +7,14 @@ namespace Microsoft.Maui.Resizetizer
 {
 	internal class AndroidAdaptiveIconGenerator
 	{
-		public AndroidAdaptiveIconGenerator(ResizeImageInfo info, string appIconName, string intermediateOutputPath, ILogger logger)
+		private bool generateImages = true;
+		public AndroidAdaptiveIconGenerator(ResizeImageInfo info, string appIconName, string intermediateOutputPath, ILogger logger, bool generateImages = true)
 		{
 			Info = info;
 			Logger = logger;
 			IntermediateOutputPath = intermediateOutputPath;
 			AppIconName = appIconName;
+			this.generateImages = generateImages;
 		}
 
 		public ResizeImageInfo Info { get; }
@@ -77,17 +79,19 @@ namespace Microsoft.Maui.Resizetizer
 
 				Logger.Log($"App Icon Background Part: " + destination);
 
-				if (backgroundExists)
-				{
-					// resize the background
-					var tools = SkiaSharpTools.Create(Info.IsVector, Info.Filename, dpi.Size, Info.Color, null, Logger);
-					tools.Resize(dpi, destination, dpiSizeIsAbsolute: true);
-				}
-				else
-				{
-					// manufacture
-					var tools = SkiaSharpTools.CreateImaginary(Info.Color, Logger);
-					tools.Resize(dpi, destination);
+				if (generateImages) {
+					if (backgroundExists)
+					{
+						// resize the background
+						var tools = SkiaSharpTools.Create(Info.IsVector, Info.Filename, dpi.Size, Info.Color, null, Logger);
+						tools.Resize(dpi, destination, dpiSizeIsAbsolute: true);
+					}
+					else
+					{
+						// manufacture
+						var tools = SkiaSharpTools.CreateImaginary(Info.Color, Logger);
+						tools.Resize(dpi, destination);
+					}
 				}
 
 				results.Add(new ResizedImageInfo { Dpi = dpi, Filename = destination });
@@ -120,18 +124,19 @@ namespace Microsoft.Maui.Resizetizer
 				}
 
 				Logger.Log($"App Icon Foreground Part: " + destination);
-
-				if (foregroundExists)
-				{
-					// resize the forground
-					var tools = SkiaSharpTools.Create(Info.ForegroundIsVector, Info.ForegroundFilename, dpi.Size, null, Info.TintColor, Logger);
-					tools.Resize(dpi, destination, Info.ForegroundScale, dpiSizeIsAbsolute: true);
-				}
-				else
-				{
-					// manufacture
-					var tools = SkiaSharpTools.CreateImaginary(null, Logger);
-					tools.Resize(dpi, destination);
+				if (generateImages) {
+					if (foregroundExists)
+					{
+						// resize the forground
+						var tools = SkiaSharpTools.Create(Info.ForegroundIsVector, Info.ForegroundFilename, dpi.Size, null, Info.TintColor, Logger);
+						tools.Resize(dpi, destination, Info.ForegroundScale, dpiSizeIsAbsolute: true);
+					}
+					else
+					{
+						// manufacture
+						var tools = SkiaSharpTools.CreateImaginary(null, Logger);
+						tools.Resize(dpi, destination);
+					}
 				}
 
 				results.Add(new ResizedImageInfo { Dpi = dpi, Filename = destination });
@@ -152,12 +157,14 @@ namespace Microsoft.Maui.Resizetizer
 				return;
 			}
 
-			var adaptiveIconXmlStr = AdaptiveIconDrawableXml
-				.Replace("{name}", AppIconName);
+			if (generateImages) {
+				var adaptiveIconXmlStr = AdaptiveIconDrawableXml
+					.Replace("{name}", AppIconName);
 
-			// Write out the adaptive icon xml drawables
-			File.WriteAllText(adaptiveIconDestination, adaptiveIconXmlStr);
-			File.WriteAllText(adaptiveIconRoundDestination, adaptiveIconXmlStr);
+				// Write out the adaptive icon xml drawables
+				File.WriteAllText(adaptiveIconDestination, adaptiveIconXmlStr);
+				File.WriteAllText(adaptiveIconRoundDestination, adaptiveIconXmlStr);
+			}
 
 			results.Add(new ResizedImageInfo { Dpi = new DpiPath("mipmap-anydpi-v26", 1), Filename = adaptiveIconDestination });
 			results.Add(new ResizedImageInfo { Dpi = new DpiPath("mipmap-anydpi-v26", 1, "_round"), Filename = adaptiveIconRoundDestination });

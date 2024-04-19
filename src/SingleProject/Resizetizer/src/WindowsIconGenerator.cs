@@ -9,11 +9,13 @@ namespace Microsoft.Maui.Resizetizer
 	/// </summary>
 	internal class WindowsIconGenerator
 	{
-		public WindowsIconGenerator(ResizeImageInfo info, string intermediateOutputPath, ILogger logger)
+		private bool generateImages = true;
+		public WindowsIconGenerator(ResizeImageInfo info, string intermediateOutputPath, ILogger logger, bool generateImages = true)
 		{
 			Info = info;
 			Logger = logger;
 			IntermediateOutputPath = intermediateOutputPath;
+			this.generateImages = generateImages;
 		}
 
 		public ResizeImageInfo Info { get; private set; }
@@ -42,30 +44,32 @@ namespace Microsoft.Maui.Resizetizer
 				return new ResizedImageInfo { Dpi = dpi, Filename = destination };
 			}
 
-			MemoryStream memoryStream = new MemoryStream();
-			tools.Resize(dpi, destination, () => memoryStream);
-			memoryStream.Position = 0;
+			if (generateImages) {
+				MemoryStream memoryStream = new MemoryStream();
+				tools.Resize(dpi, destination, () => memoryStream);
+				memoryStream.Position = 0;
 
-			int numberOfImages = 1;
-			using BinaryWriter writer = new BinaryWriter(File.Create(destination));
-			writer.Write((short)0x0); // Reserved. Must always be 0.
-			writer.Write((short)0x1); // Specifies image type: 1 for icon (.ICO) image
-			writer.Write((short)numberOfImages); // Specifies number of images in the file.
+				int numberOfImages = 1;
+				using BinaryWriter writer = new BinaryWriter(File.Create(destination));
+				writer.Write((short)0x0); // Reserved. Must always be 0.
+				writer.Write((short)0x1); // Specifies image type: 1 for icon (.ICO) image
+				writer.Write((short)numberOfImages); // Specifies number of images in the file.
 
-			writer.Write((byte)dpi.Size.Value.Width);
-			writer.Write((byte)dpi.Size.Value.Height);
-			writer.Write((byte)0x0); // Specifies number of colors in the color palette
-			writer.Write((byte)0x0); // Reserved. Should be 0
-			writer.Write((short)0x1); // Specifies color planes. Should be 0 or 1
-			writer.Write((short)0x8); // Specifies bits per pixel.
-			writer.Write((int)memoryStream.Length); // Specifies the size of the image's data in bytes
+				writer.Write((byte)dpi.Size.Value.Width);
+				writer.Write((byte)dpi.Size.Value.Height);
+				writer.Write((byte)0x0); // Specifies number of colors in the color palette
+				writer.Write((byte)0x0); // Reserved. Should be 0
+				writer.Write((short)0x1); // Specifies color planes. Should be 0 or 1
+				writer.Write((short)0x8); // Specifies bits per pixel.
+				writer.Write((int)memoryStream.Length); // Specifies the size of the image's data in bytes
 
-			int offset = 6 + (16 * numberOfImages); // + length of previous images
-			writer.Write(offset); // Specifies the offset of BMP or PNG data from the beginning of the ICO/CUR file
+				int offset = 6 + (16 * numberOfImages); // + length of previous images
+				writer.Write(offset); // Specifies the offset of BMP or PNG data from the beginning of the ICO/CUR file
 
-			// write png data for each image
-			memoryStream.CopyTo(writer.BaseStream);
-			writer.Flush();
+				// write png data for each image
+				memoryStream.CopyTo(writer.BaseStream);
+				writer.Flush();
+			}
 
 			return new ResizedImageInfo { Dpi = dpi, Filename = destination };
 		}

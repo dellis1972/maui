@@ -10,8 +10,9 @@ namespace Microsoft.Maui.Resizetizer
 	internal class AppleIconAssetsGenerator
 	{
 		private JsonSerializerOptions options;
+		private bool generateImages = true;
 
-		public AppleIconAssetsGenerator(ResizeImageInfo info, string appIconName, string intermediateOutputPath, DpiPath[] dpis, ILogger logger)
+		public AppleIconAssetsGenerator(ResizeImageInfo info, string appIconName, string intermediateOutputPath, DpiPath[] dpis, ILogger logger, bool generateImages = true)
 		{
 			Info = info;
 			Logger = logger;
@@ -19,6 +20,7 @@ namespace Microsoft.Maui.Resizetizer
 			AppIconName = appIconName;
 			Dpis = dpis;
 			options = new JsonSerializerOptions { WriteIndented = true };
+			this.generateImages = generateImages;
 		}
 
 		public string AppIconName { get; }
@@ -32,17 +34,15 @@ namespace Microsoft.Maui.Resizetizer
 		public IEnumerable<ResizedImageInfo> Generate()
 		{
 			var outputAppIconSetDir = Path.Combine(IntermediateOutputPath, DpiPath.Ios.AppIconPath.Replace("{name}", AppIconName));
-			var outputAssetsDir = Path.Combine(outputAppIconSetDir, "..");
-
+			
 			Logger.Log("iOS App Icon Set Directory: " + outputAppIconSetDir);
 
 			Directory.CreateDirectory(outputAppIconSetDir);
 
-			var assetContentsFile = Path.Combine(outputAssetsDir, "Contents.json");
 			var appIconSetContentsFile = Path.Combine(outputAppIconSetDir, "Contents.json");
 
-			var (sourceExists, sourceModified) = Utils.FileExists(Info.Filename);
-			var (destinationExists, destinationModified) = Utils.FileExists(appIconSetContentsFile);
+			var (_, sourceModified) = Utils.FileExists(Info.Filename);
+			var (_, destinationModified) = Utils.FileExists(appIconSetContentsFile);
 
 			if (destinationModified > sourceModified)
 			{
@@ -51,15 +51,6 @@ namespace Microsoft.Maui.Resizetizer
 					new ResizedImageInfo { Dpi = new DpiPath("", 1), Filename = appIconSetContentsFile }
 				};
 			}
-
-			var infoJsonProp = new JsonObject
-			{
-				["info"] = new JsonObject
-				{
-					["version"] = 1,
-					["author"] = "xcode",
-				}
-			};
 
 			var appIconImagesJson = new JsonArray();
 
@@ -94,11 +85,10 @@ namespace Microsoft.Maui.Resizetizer
 				},
 			};
 
-			//File.WriteAllText(assetContentsFile, infoJsonProp.ToString());
-			File.WriteAllText(appIconSetContentsFile, appIconContentsJson.ToJsonString(options));
+			if (generateImages)
+				File.WriteAllText(appIconSetContentsFile, appIconContentsJson.ToJsonString(options));
 
 			return new List<ResizedImageInfo> {
-				//new ResizedImageInfo { Dpi = new DpiPath("", 1), Filename = assetContentsFile },
 				new ResizedImageInfo { Dpi = new DpiPath("", 1), Filename = appIconSetContentsFile }
 			};
 		}
